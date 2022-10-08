@@ -1,12 +1,15 @@
 import './App.css';
-import { useState } from 'react';
-import { Note } from './Note.js';
+import { useEffect, useState } from 'react';
+import { Note } from './Note';
+import notesService from './services/notes';
 
-function App(props) {
-
-    const [notes, setNotes] = useState(props.notes);
+function App() {
+    const [notes, setNotes] = useState([]);
     const [newNote, setNewNote] = useState('');
-    const [showAll, setShowAll] = useState(true);
+
+    useEffect(() => {
+        notesService.getAll().then(notes => setNotes(notes))
+    }, [])
 
     const handleChange = (event) => {
         setNewNote(event.target.value);
@@ -16,31 +19,21 @@ function App(props) {
         event.preventDefault();
 
         const noteToAddToState = {
-            id: notes.length + 1,
-            content: newNote,
-            date: new Date().toISOString(),
-            important: Math.random() < 0.5
+            userId: 1,
+            title: newNote,
+            body: newNote
         };
 
-        setNotes([...notes, noteToAddToState]);
+        notesService.create(noteToAddToState)
+            .then(newNote => setNotes(prevNotes => [...prevNotes, newNote]));
         setNewNote('');
-    };
-
-    const handleShowAll = () => {
-        setShowAll(() => !showAll);
     };
 
     return (
         <div>
             <h1>Notes</h1>
-            <button onClick={handleShowAll}>
-                {showAll ? 'Mostrar solo notas importantes' : 'Mostrar todas las notas'}
-            </button>
             <ul>
-                {notes
-                    .filter(note => showAll ? true : note.important === true)
-                    .map(note => <Note key={note.id} content={note.content} date={note.date} />)
-                }
+                {notes.map(note => <Note key={note.id} {...note} />)}
             </ul>
 
             <form onSubmit={handleSubmit}>
